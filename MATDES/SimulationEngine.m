@@ -7,7 +7,7 @@ classdef SimulationEngine < handle
         state                   % a state object
         clock = 0               % simulation clock
         eventsList              % a futureEventsList object
-        statistics              % statistical counters
+        stats                   % a statsManager object
     end
     
     methods (Abstract)
@@ -22,13 +22,13 @@ classdef SimulationEngine < handle
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Constructor
-        function obj = SimulationEngine(DataStruct, StatFields, StatMethods)
+        function obj = SimulationEngine(stateStruct, statStruct)
             % Initialize the state
-            if ~isstruct(DataStruct)
+            if ~isstruct(stateStruct) || ~isstruct(statStruct)
                 error(['Error during construction of SimulationEngine object. ' ...
-                    'The first argument is not a struct.'])
+                    'One of the arguments is not a struct.'])
             end
-            obj.state = state(DataStruct);
+            obj.state = state(stateStruct);
             
             % Initialize the clock
             obj.clock = 0;
@@ -37,7 +37,7 @@ classdef SimulationEngine < handle
             obj.eventsList = futureEventsList();
             
             % Initialize the statistics
-            obj.statistics = statsManager(StatFields, StatMethods);
+            obj.stats = statsManager(statStruct);
             
         end %end constructor
         
@@ -60,7 +60,7 @@ classdef SimulationEngine < handle
                 nextEvent = obj.eventsList.Dequeue();
                 % Advance the simulation clock
                 obj.clock = nextEvent.clock;
-                obj.statistics.simulationClock = obj.clock;
+                obj.stats.clock = obj.clock;
                 % Update the system state and schedule the next event
                 % The statistics will be update inside this function
                 nextEvent.manageEvent(obj);
@@ -73,10 +73,12 @@ classdef SimulationEngine < handle
         % Clear the state and the statistical counters
         % The state will be cleared using the struct DataStruct
         function clear(obj, DataStruct)
+            obj.clock = 0;
+            obj.eventsList = futureEventsList();
             fields = fieldnames(DataStruct)';
             values = struct2cell(DataStruct)';
             obj.state.update(fields, values);
-            obj.statistics.clear();
+            obj.stats.clear();
         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -84,17 +86,14 @@ classdef SimulationEngine < handle
         function generateReport(obj)
             disp('Simulation ended.')
             disp('Statistics collected:');
-            fields = obj.statistics.fields_;
-            for i=1:length(fields)
-                field = obj.statistics.fields_{i};
-                method = obj.statistics.methods_{i};
-                disp(field);
-                disp(['Statistic: ', method]);
-                disp(obj.statistics.counters.(field));
+            tracked = fieldnames(obj.stats.statistics);
+            for i=1:length(tracked)
+                field = tracked{i};
+                disp([field, ': ', num2str(obj.stats.statistics.(field).getResult())]);
             end
         end
 
-    end
+    end %end methods
 
-end
+end %end classdef
 

@@ -1,5 +1,5 @@
 classdef (Abstract) event < handle & matlab.mixin.Heterogeneous
-    % event class
+    % event
     % event is a subclass of the matlab.mixin.Heterogeneous class because
     % this class supports forming heterogeneous arrays. A heterogeneous 
     % array is an array of objects that differ in their specific class, but
