@@ -89,7 +89,8 @@ classdef SimulationEngine < handle
             tracked = fieldnames(obj.stats.statistics);
             for i=1:length(tracked)
                 field = tracked{i};
-                disp([field, ': ', num2str(obj.stats.statistics.(field).getResult())]);
+                disp([field, ': ']);
+                disp(num2str(obj.stats.statistics.(field).getResult()));
             end
         end
 
