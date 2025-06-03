@@ -45,13 +45,13 @@ classdef Refueling < event
         
             % Enqueue or start paying
             if Q(idx_server) > 0
-                % all busy ⇒ join shortest queue
+                % all busy => join shortest queue
                 simEngine.state.serverQueue{idx_server}{end+1} = [obj.lane, obj.idx];
                 % Update the statistics that keeps track of the average
                 % queue length
                 simEngine.stats.update('averageServerQueueLength', Q);
             else
-                % cashier free ⇒ go immediately to payment
+                % cashier free => go immediately to payment
                 simEngine.state.serverQueue{idx_server}{end+1} = [obj.lane, obj.idx];
                 simEngine.stats.update('averageServerQueueLength', Q)
                 simEngine.stats.update('averageServerIdlensess', double(Q==0));

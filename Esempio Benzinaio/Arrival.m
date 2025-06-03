@@ -34,15 +34,28 @@ classdef Arrival < event
                 simEngine.stats.update('numLost');
             else
                 if fuelQueueLength == 0
-                    chosenLane = simEngine.state.layout(obj.lane, :);
-                    if chosenLane(1) ~= 1
-                        % The entrance is occupied, the car must wait in line
+                    % Select the most convenient lane that can serve this
+                    % car
+                    nLanes = length(simEngine.state.layout(:, 1));
+                    possibleLanes_idx = 1:nLanes;
+                    possibleLanes_idx = possibleLanes_idx(mod(possibleLanes_idx, 2) == mod(obj.lane,2));
+                    possibleLanes_idx(possibleLanes_idx == obj.lane) = [];
+                    possibleLanes_idx = [obj.lane, possibleLanes_idx];
+
+                    possibleLanes = simEngine.state.layout(possibleLanes_idx, :);
+                    freeLane = find(possibleLanes(:, 1) == 1, 1);
+                    if isempty(freeLane)
+                        % The entrances to all the possible lanes are
+                        % occupied
+                        % The car must wait in line
                         simEngine.state.fuelQueue(end+1) = obj.lane;
                         % Update the statistic that keeps track of the
                         % average queue length
                         simEngine.stats.update('averageFuelQueueLength', fuelQueueLength);
-
                     else
+                        simEngine.stats.update('averageFuelQueueLength', fuelQueueLength);
+                        actualLane = possibleLanes_idx(freeLane);
+                        chosenLane = simEngine.state.layout(actualLane, :);
                         % The entrance is free
                         % The car can enter to refuel
                         nSpots = length(chosenLane);
@@ -67,16 +80,16 @@ classdef Arrival < event
                         % usage
 
                         % Update the layout
-                        simEngine.state.layout(obj.lane, idx) = 0;
+                        simEngine.state.layout(actualLane, idx) = 0;
                                                 
                         % Schedule the refueling completion event 
                         refEv = Refueling('Refueling', ...
                             [simEngine.lb_refuel, simEngine.ub_refuel], ...
-                            obj.clock, obj.lane, idx);
+                            obj.clock, actualLane, idx);
                         refEv.clock = refEv.rnd();
                         simEngine.eventsList.Enqueue(refEv);
-                    
                     end
+                    
                 else
                     % Add the car to the queue
                     simEngine.state.fuelQueue(end+1) = obj.lane;
